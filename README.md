@@ -1,4 +1,4 @@
-# Tradingaly : Trading account basic simulator
+# Tradingaly : Basic trading account simulator
 
 ## A Python project for executing sell and buy orders to a local trading account.
 

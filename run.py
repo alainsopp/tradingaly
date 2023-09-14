@@ -137,13 +137,12 @@ class OrderBook(QMainWindow):
         return amountAvailable >= int(amount)
     
     def getBidAskIndexes(self, bidask: str, price: str) -> list:
-        ''' Getting all ask/bid offers row indexes from the source file
-            TODO: fix indentation
+        ''' Getting all ask/bid offers row indexes from the source file            
         '''
         bidaskIndexes = []
         i = 0
 
-        # We are looking for buying at the market lowest available price
+        ''' We are looking for buying at the market lowest available price'''
         if bidask == bid:
             pass#or row in self.ui.data:
                 #if row['bidask'] == bidask and float(row['price']) <= float(price):
@@ -158,7 +157,7 @@ class OrderBook(QMainWindow):
 		       #    	i += 1
         return bidaskIndexes
     
-    def processLimitedOrder(self, bidask: str, price: str, amount: str)-> None:
+    def processLimitOrder(self, bidask: str, price: str, amount: str)-> None:
         ''' Remov' the amount of order corresponding to amount parameter
         and updates account balance.
         '''
@@ -234,12 +233,12 @@ class OrderBook(QMainWindow):
             msg = frmtd
             if self.isBalanceSufficient():
                 if self.isOrderSatisfiable(bidask, price, amount):
-                    self.processLimitedOrder(bidask, price, amount)
+                    self.processLimitOrder(bidask, price, amount)
                     msg = msg + " Order executed successfully."
                     self.label_info_content.setText(msg)
                     self.label_info_content.setStyleSheet('color:green;')
                 else:
-                    self.addOrder(bidask, price, amoun)
+                    self.addOrder(bidask, price, amount)
                     msg = msg + " New order placed successfully."
                     self.label_info_content.setText(msg)
                     self.label_info_content.setStyleSheet('color:green;')
