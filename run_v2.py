@@ -57,8 +57,10 @@ class Simulator(QMainWindow):
         self.ui.label_currency_account_balance.setText(str(self.ui.account['balance']))
         self.ui.label_share_account_balance.setText(str(self.ui.account['shares'][0]['amount']))
 
-    def process_buy_order(self, share: str, type: str, size: int) -> None:
-        ''' buy shares on the market'''
+    def process_buy_order(self, share: str, type: str, size: int) -> int:
+        ''' buy shares on the market.
+            Returns 1 if the order was executed.
+            Return 0 otherwise '''
         index = fct.get_min_bid_index('ShareX', self.ui.market)        
         price = float(self.ui.market[index]['price'])
         sizeprice = size * price
@@ -72,22 +74,19 @@ class Simulator(QMainWindow):
             current_market_size -= size            
             if current_market_size > 0:
                 self.ui.market[index]['size'] = current_market_size
-                self.ui.account['balance'] -= sizeprice
+                self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice,2)
             else:
                 self.ui.market.remove(self.ui.market[index])
-        
-        ''' Add new share to the account shares balance'''
-        idx = 0
-        size_share = len(self.ui.account['shares'])
-        found = False        
-        while idx <= size_share - 1 and not found:
-            print('test1')
-            if self.ui.account['shares'][idx]['name'] == share:
-                print('test2')
-                self.ui.account['shares'][idx]['amount'] += size
-                found = True
-            idx += 1
 
+            ''' Add new share to the account shares balance'''
+            idx = 0
+            size_share = len(self.ui.account['shares'])
+            found = False        
+            while idx <= size_share - 1 and not found:            
+                if self.ui.account['shares'][idx]['name'] == share:            
+                    self.ui.account['shares'][idx]['amount'] += size
+                    found = True
+                idx += 1
         self.ui.update_context()
         
     def process_sell_order(self, share: str, type: str, size: int) -> None:
