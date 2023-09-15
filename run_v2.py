@@ -14,6 +14,7 @@ market = 'MARKET'
 fieldnames = ['bidask','price','size']
 
 class Simulator(QMainWindow):
+    
     def __init__(self, parent=None):
         
         super(Simulator, self).__init__(parent)                
@@ -25,11 +26,11 @@ class Simulator(QMainWindow):
         self.ui.update_market_view()
         
         ''' View model for account'''
-        self.ui.account = {'balance':200, 'shares':[{'name':'ShareX', 'amount': 200}]}        
+        self.ui.account = {'balance' : 200, 'shares' : [{'name' : 'ShareX', 'amount' : 200}]}        
 
         ''' Set events on buttons'''
-        self.ui.pushButton_buy.clicked.connect(lambda: self.process_buy_order('ShareX', self.ui.comboBox_type.currentText, int(self.ui.lineEdit_amount.text())))
-        self.ui.pushButton_sell.clicked.connect(lambda: self.process_sell_order('ShareX', self.ui.comboBox_type.currentText, int(self.ui.lineEdit_amount.text())))
+        self.ui.pushButton_buy.clicked.connect(lambda: self.process_buy_order('ShareX', self.ui.comboBox_type.currentText(), int(self.ui.lineEdit_amount.text())))
+        self.ui.pushButton_sell.clicked.connect(lambda: self.process_sell_order('ShareX', self.ui.comboBox_type.currentText(), int(self.ui.lineEdit_amount.text())))
         
         self.ui.update_account_view()
 
@@ -57,10 +58,27 @@ class Simulator(QMainWindow):
         self.ui.label_currency_account_balance.setText(str(self.ui.account['balance']))
         self.ui.label_share_account_balance.setText(str(self.ui.account['shares'][0]['amount']))
 
-    def process_buy_order(self, share: str, type: str, size: int) -> int:
-        ''' buy shares on the market.
-            Returns 1 if the order was executed.
-            Return 0 otherwise '''
+    def process_buy_order(self, share: str, type: str, size:int) -> None:
+        ''' Execute a buy (MARKET or LIMIT) order
+        '''
+        if type == 'MARKET':
+            self.process_buy_market_order(share, size)
+        if type == 'LIMIT':
+            self.process_buy_limit_order(share, size)
+
+    def process_buy_limit_order(self, share: str, size) -> None:
+        ''' Execute a buy limit order 
+        '''        
+        is_operation_processed = False
+        return is_operation_processed
+    
+    def process_buy_market_order(self, share: str, size: int) -> int:
+        ''' buy shares on the market by executing a market buy order.
+        '''
+        is_operation_processed = False
+        d = datetime.datetime.now()
+        frmtd = d.strftime("%d/%m/%y %H:%M:%S")
+        msg = frmtd
         index = fct.get_min_bid_index('ShareX', self.ui.market)        
         price = float(self.ui.market[index]['price'])
         sizeprice = size * price
@@ -86,12 +104,25 @@ class Simulator(QMainWindow):
                 if self.ui.account['shares'][idx]['name'] == share:            
                     self.ui.account['shares'][idx]['amount'] += size
                     found = True
+                    is_operation_processed = True
                 idx += 1
-        self.ui.update_context()
-        
+        if is_operation_processed:
+            msg = msg + " Order executed successfully."
+            self.label_info_content.setText(msg)
+            self.label_info_content.setStyleSheet('color:green;')
+            self.ui.update_context()
+        else:
+            msg = msg + " Order not executed."
+            self.label_info_content.setText(msg)
+            self.label_info_content.setStyleSheet('color:red;')
+        return is_operation_processed       
+
     def process_sell_order(self, share: str, type: str, size: int) -> None:
-        ''' Sell shares on the market'''
-        pass
+        ''' Execute a sell order (LIMIT or MARKET)'''
+        if type == 'LIMIT':
+            print('LIMIT order')
+        else:
+            print('MARKET order')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
