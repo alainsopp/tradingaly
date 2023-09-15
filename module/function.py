@@ -1,4 +1,4 @@
-import csv
+import csv, datetime
 
 def get_min_bid_index(share: str, data) -> int:
     ''' Return the index of the less expansive share inside the
@@ -35,3 +35,11 @@ def load_data(filename) -> None:
         for row in rows:                
             data.append({'shareName': 'ShareX', 'offer': row['offer'], 'price': float(row['price']), 'size': int(row['size'])})
     return data
+
+def messageDate() -> str:
+    ''' Formatting date to add in front of log and information messages
+    '''
+    d = datetime.datetime.now()
+    formated_date = d.strftime("%d/%m/%y %H:%M:%S")
+    message = formated_date
+    return message

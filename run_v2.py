@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
-import csv, platform, sys, datetime, pdb
+import sys, datetime
 import module.function as fct
 
 filename = 'input/data.csv'
@@ -68,17 +68,15 @@ class Simulator(QMainWindow):
 
     def process_buy_limit_order(self, share: str, size) -> None:
         ''' Execute a buy limit order 
-        '''        
+        '''
+
         is_operation_processed = False
         return is_operation_processed
     
     def process_buy_market_order(self, share: str, size: int) -> int:
         ''' buy shares on the market by executing a market buy order.
         '''
-        is_operation_processed = False
-        d = datetime.datetime.now()
-        frmtd = d.strftime("%d/%m/%y %H:%M:%S")
-        msg = frmtd
+        is_operation_processed = False        
         index = fct.get_min_bid_index('ShareX', self.ui.market)        
         price = float(self.ui.market[index]['price'])
         sizeprice = size * price
@@ -107,12 +105,12 @@ class Simulator(QMainWindow):
                     is_operation_processed = True
                 idx += 1
         if is_operation_processed:
-            msg = msg + " Order executed successfully."
+            msg = fct.messageDate() + " Order executed successfully."
             self.label_info_content.setText(msg)
             self.label_info_content.setStyleSheet('color:green;')
             self.ui.update_context()
         else:
-            msg = msg + " Order not executed."
+            msg = fct.messageDate() + " Order not executed."
             self.label_info_content.setText(msg)
             self.label_info_content.setStyleSheet('color:red;')
         return is_operation_processed       

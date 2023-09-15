@@ -1,11 +1,10 @@
-import sys
+import sys, unittest
 sys.path.append('../')
 import module.function as fct
-import unittest
-import json
 
 class TestFunctions(unittest.TestCase):
-    ''' Read data '''
+    ''' Read data 
+    '''
     def test_formatVariation(self):
         self.assertEqual(fct.get_min_bid_index('ShareX', data), 5)
 

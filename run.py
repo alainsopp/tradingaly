@@ -1,10 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
-import csv
-import platform
-import sys
-import pdb
-import datetime
+import csv, sys, datetime
 
 filename = 'input/editeddata.csv'
 bid = 'BID'
@@ -19,6 +15,7 @@ account_initial_currency_balance = 199
 account_initial_share_balance = 200
 
 class OrderBook(QMainWindow):
+    
     def __init__(self, parent=None):
         super(OrderBook, self).__init__(parent)        
         self.ui = uic.loadUi('orderbook.ui', self) 
@@ -234,7 +231,7 @@ class OrderBook(QMainWindow):
             if self.isBalanceSufficient():
                 if self.isOrderSatisfiable(bidask, price, amount):
                     self.processLimitOrder(bidask, price, amount)
-                    msg = msg + " Order executed successfully."
+                    msg = fct.messageDate() + " Order executed successfully."
                     self.label_info_content.setText(msg)
                     self.label_info_content.setStyleSheet('color:green;')
                 else:
