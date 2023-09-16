@@ -1,16 +1,17 @@
 # Tradingaly : Basic trading account simulator
 
-## A Python project for executing sell and buy orders to a local trading account.
+## A tool to simulate sell and buy orders execution to a local trading account and a local stockexchange market. 
 
 This project is intended to help practicing Buy and Sell orders on a market  
 by simulating a basic trading account and a local sandbox orderbook and a market.
 
 ## Features
 
-* Selling shares available in the user portfolio.
-* Buying shares available on the "market". The market has only 1 share available for now.
+* Selling shares available in the user account.
+* Buying shares available on the "market".  
+  The market has only 1 share available.
 * Visualizing shares hold by user as well as the amount of liquidity on the user account.
-* Visualizing the amount of shares available on the market and the associated ASK and BID.offers.
+* Visualizing the amount of shares available on the market and the associated ASK and BID offers.
 
 ![orderbook ui](img/demo.png)
 
@@ -31,4 +32,4 @@ If you would like to submit PR with a fix, reference the issue you created.
 
 ## Known issues (Work in progress)
 
-This project is still under developement and is not functionnal by now. 
+Limit orders are not working.
