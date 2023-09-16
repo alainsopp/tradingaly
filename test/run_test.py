@@ -7,6 +7,9 @@ class TestFunctions(unittest.TestCase):
     '''
     def test_formatVariation(self):
         self.assertEqual(fct.get_min_bid_index('ShareX', data), 5)
+    
+    def test_get_max_ask_index(self):
+        self.assertEqual(fct.get_max_ask_index('ShareX', data), 0)
 
 if __name__ == '__main__':
     input_file_path = "../input/data.csv"    

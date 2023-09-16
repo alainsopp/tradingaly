@@ -1,0 +1,7 @@
+filename = 'input/data.csv'
+bid = 'BID'
+ask = 'ASK'
+buy = 'BUY'
+sell= 'SELL'
+limit = 'LIMIT'
+market = 'MARKET'
