@@ -31,4 +31,4 @@ If you would like to submit PR with a fix, reference the issue you created.
 
 ## Known issues (Work in progress)
 
-This project is still under developement and is not functionnal by now. 
+Limit orders are not working.
