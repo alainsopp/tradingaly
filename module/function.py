@@ -1,5 +1,34 @@
 import csv, datetime
 
+def get_max_ask_index(share: str, data) -> int:
+    max_ask = data[0]['price']
+    max_ask_index = 0
+    index = -1
+    for row in data:
+        index += 1
+        val = row['price']        
+        if row['offer'] == "ASK" and val > max_ask and row['shareName'] == share:
+            print('inside')
+            print(max_ask_index)
+            max_ask = val
+            max_ask_index = index
+    return max_ask_index
+
+def get_limit_min_bid_index(share: str, limit: float, data) ->int:
+    ''' Return the index of the less expansive share <share> of the market
+        with a value lower than or equal to <limit> 
+    '''
+    limit_min_bid = limit
+    limit_min_bid_index = -1
+    index = -1
+    for row in data:
+        index += 1
+        val = row['price']
+        if row['offer'] == "BID" and val <= limit_min_bid:
+            limit_min_bid = val
+            limit_min_bid_index = index
+    return limit_min_bid_index
+
 def get_min_bid_index(share: str, data) -> int:
     ''' Return the index of the less expansive share inside the
         table representing the market.
@@ -14,20 +43,6 @@ def get_min_bid_index(share: str, data) -> int:
             min_bid = val
             min_bid_index = index
     return min_bid_index
-
-def get_max_ask_index(share: str, data) -> int:
-    max_ask = data[0]['price']
-    max_ask_index = 0
-    index = -1
-    for row in data:
-        index += 1
-        val = row['price']        
-        if row['offer'] == "ASK" and val > max_ask and row['shareName'] == share:
-            print('inside')
-            print(max_ask_index)
-            max_ask = val
-            max_ask_index = index
-    return max_ask_index
 
 def is_buyable(cost: float, balance: float, availableSize: int, marketPrice: float) -> bool:
     ''' Return true if the account balance is sufficient

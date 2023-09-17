@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import *
-from PyQt5 import uic, QtWidgets
+from PyQt5 import uic, QtWidgets, QtGui
 import sys
 import module.function as fct
 import config.config as cfg
@@ -11,6 +11,8 @@ class Simulator(QMainWindow):
         super(Simulator, self).__init__(parent)                
         self.ui = uic.loadUi('simulator.ui', self) 
         self.ui.setWindowTitle('Tradingaly')
+        self.ui.lineEdit_amount.setValidator(QtGui.QIntValidator(1,2147483647, self))
+        self.ui.lineEdit_price.setValidator(QtGui.QIntValidator(1,2147483647, self))
         
         ''' View model for market'''
         self.ui.market = fct.load_data(input_file_name)    
@@ -20,11 +22,10 @@ class Simulator(QMainWindow):
         self.ui.account = {'balance' : 200, 'shares' : [{'name' : 'ShareX', 'amount' : 200}]}        
 
         ''' Set events on buttons'''
-        self.ui.pushButton_buy.clicked.connect(lambda: self.process_buy_order('ShareX', self.ui.comboBox_type.currentText(), int(self.ui.lineEdit_amount.text())))
-        self.ui.pushButton_sell.clicked.connect(lambda: self.process_sell_order('ShareX', self.ui.comboBox_type.currentText(), int(self.ui.lineEdit_amount.text())))
+        self.ui.pushButton_buy.clicked.connect(lambda: self.process_order( 'ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.buy, self.ui.lineEdit_price.text()))
+        self.ui.pushButton_sell.clicked.connect(lambda: self.process_order('ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.sell,self.ui.lineEdit_price.text()))
         
         self.ui.update_account_view()
-
         self.show()
                 
     def update_context(self) -> None:
@@ -54,16 +55,33 @@ class Simulator(QMainWindow):
         self.ui.label_currency_account_balance.setText(str(self.ui.account['balance']))
         self.ui.label_share_account_balance.setText(str(self.ui.account['shares'][0]['amount']))
 
-    def process_buy_order(self, share: str, type: str, size:int) -> None:
-        ''' Execute a buy (MARKET or LIMIT) order
-        '''
-        if type == cfg.market:
-            self.process_buy_market_order(share, size)
-        if type == cfg.limit:
-            self.process_buy_limit_order(share, size)
-
-    def process_buy_limit_order(self, share: str, size) -> None:
-        ''' Execute a buy limit order.
+    def process_order(self, shareName: str, size: int, orderType: str, action: str, limit: int=None) -> None:        
+        if size == '':
+            ''' Amount is empty'''
+            self.set_info_message("Please, enter an amount.", "yellow")            
+        else:
+            if orderType == cfg.limit:                
+                ''' LIMIT order'''
+                if limit == None or limit == '':
+                    ''' LIMIT value is empty'''
+                    self.set_info_message("Please, enter a LIMIT value.", "yellow")
+                else:
+                    if action == cfg.sell:
+                        ''' Sell order'''
+                        self.ui.process_buy_limit_order(shareName, size, limit)
+                        ''' Buy order'''
+                    elif action == cfg.buy:
+                        self.ui.process_buy_market_order(shareName, size)
+            elif orderType == cfg.market:
+                ''' MARKET order'''
+                if action == cfg.sell:
+                    ''' Sell order'''
+                    self.ui.process_sell_market_order(shareName, size)
+                elif action == cfg.buy:
+                    self.ui.process_buy_market_order(shareName, size)
+   
+    def process_sell_limit_order(self, share: str, size) -> None:
+        ''' Execute a sell limit order.
         '''
         is_operation_processed = False
         return is_operation_processed
@@ -105,25 +123,26 @@ class Simulator(QMainWindow):
             self.set_info_message(" Order not executed.", "red")
         self.ui.update_context()    
         return is_operation_processed
-    
+ 
     def process_buy_market_order(self, share: str, size: int) -> int:
         ''' buy shares on the market by executing a market buy order.
         '''
-        is_operation_processed = False        
+        is_operation_processed = False
         index = fct.get_min_bid_index('ShareX', self.ui.market)
         price = float(self.ui.market[index]['price'])
         sizeprice = size * price
         account_balance = float(self.ui.account['balance'])
-        market_size= self.ui.market[index]['size']
+        market_size = self.ui.market[index]['size']
         market_price = self.ui.market[index]['price']
-        ''' Remove share from the market'''
+        ''' Remove share amount rom the market'''
         if fct.is_buyable(sizeprice, account_balance, market_size, market_price):
             current_market_size = market_size
             current_market_size -= size            
             if current_market_size > 0:
                 self.ui.market[index]['size'] = current_market_size
-                self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice,2)
+                self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice, 2)
             else:
+                ''' Remove share completely from the market'''
                 self.ui.market.remove(self.ui.market[index])
             ''' Add new share to the account shares balance'''
             idx = 0
@@ -141,14 +160,52 @@ class Simulator(QMainWindow):
         else:
             self.set_info_message(" Order not executed.", "red")
         self.ui.update_context()
-        return is_operation_processed       
-
-    def process_sell_order(self, share: str, type: str, size: int) -> None:
-        ''' Execute a sell order (LIMIT or MARKET)'''
-        if type == cfg.limit:
-            print('LIMIT order')
+        return is_operation_processed
+        
+    def process_buy_limit_order(self, share: str, size: int, limit: float) -> None:
+        ''' Execute a buy limit order only if the share price is lower than <limit>.
+            If no shares is under the limit, add a new offer to the market.
+        '''
+        is_opreation_processed = False
+        index = fct.get_limit_min_bid_index('ShareX', limit, self.ui.market)
+        if index != -1:
+            ''' If an offer at the limit was found, then execute the order'''
+            price = float(self.ui.market[index]['price'])
+            sizeprice = size * price
+            account_balance = float(self.ui.account['balance'])
+            market_size = self.ui.market[index]['size']
+            market_price = self.ui.market[index]['price']
+            ''' Remove share amount from market'''
+            if fct.is_buyable(sizeprice, account_balance, market_size, market_price):                
+                market_size -= size            
+                if market_size > 0:
+                    self.ui.market[index]['size'] = market_size
+                    self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice, 2)
+                else:
+                    ''' Remove share completely from the market'''
+                    self.ui.market.remove(self.ui.market[index])
+                ''' Add new share to the account shares balance'''
+                idx = 0
+                size_share = len(self.ui.account['shares'])
+                found = False        
+                while idx <= size_share - 1 and not found:            
+                    if self.ui.account['shares'][idx]['name'] == share:            
+                        self.ui.account['shares'][idx]['amount'] += size
+                        found = True
+                        is_operation_processed = True
+                    idx += 1
+            ''' Displays confirmation message'''
+            if is_operation_processed:
+                self.set_info_message(" Order executed successfully.", "green")            
+            else:
+                self.set_info_message(" Order not executed.", "red")
         else:
-            self.ui.process_sell_market_order(share, size)
+            ''' If not offer at the limit was found then
+                add a new offer on the market
+            '''
+            self.ui.market.append({'shareName': 'ShareX', 'offer': 'ASK', 'price': limit, 'size': size})
+        self.ui.update_context()
+        return is_opreation_processed
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
