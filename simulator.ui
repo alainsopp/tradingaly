@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>715</width>
-    <height>411</height>
+    <width>1103</width>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,8 +59,8 @@ padding-left: 5px;
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>701</width>
-      <height>381</height>
+      <width>1081</width>
+      <height>471</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -294,17 +294,35 @@ padding-left: 5px;
              <property name="text">
               <string>Info:</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QLabel" name="label_info_content">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="font">
               <font>
-               <pointsize>11</pointsize>
+               <pointsize>9</pointsize>
               </font>
              </property>
              <property name="text">
               <string/>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
              </property>
             </widget>
            </item>

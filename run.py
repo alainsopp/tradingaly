@@ -3,6 +3,7 @@ from PyQt5 import uic, QtWidgets, QtGui
 import sys
 import module.function as fct
 import config.config as cfg
+import uuid
 
 class Simulator(QMainWindow):
     
@@ -21,6 +22,7 @@ class Simulator(QMainWindow):
         ''' View model for account'''
         self.ui.account = {'balance' : 200, 'shares' : [{'name' : 'ShareX', 'amount' : 200}]}        
 
+        self.ui.transaction_id = ''
         ''' Set events on buttons'''
         self.ui.pushButton_buy.clicked.connect(lambda: self.process_order( 'ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.buy, self.ui.lineEdit_price.text()))
         self.ui.pushButton_sell.clicked.connect(lambda: self.process_order('ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.sell,self.ui.lineEdit_price.text()))
@@ -33,10 +35,11 @@ class Simulator(QMainWindow):
         self.update_market_view()
         self.update_account_view()
     
-    def set_info_message(self, message: str, color: str) -> None:
-        msg = fct.message_date() + message
-        self.label_info_content.setText(msg)
-        self.label_info_content.setStyleSheet('color:%s;' % color)
+    def set_info_message(self, transacId: str, message: str, color: str) -> None:        
+        msg = fct.message_date() + ' [' + transacId + ']' + message
+        new_msg = "".join((self.ui.label_info_content.text(), '\n', msg))
+        self.ui.label_info_content.setText(new_msg)
+        self.ui.label_info_content.setStyleSheet('color:%s;' % color)
 
     def update_market_view(self) -> None:
         ''' Update market table with ui.data content'''
@@ -58,14 +61,17 @@ class Simulator(QMainWindow):
     def process_order(self, shareName: str, size: int, orderType: str, action: str, limit: int=None) -> None:        
         if size == '':
             ''' Amount is empty'''
-            self.set_info_message("Please, enter an amount.", "yellow")            
+            msg = " Please, enter amount value."
+            self.set_info_message("", msg, "yellow")            
         else:
             if orderType == cfg.limit:                
                 ''' LIMIT order'''
                 if limit == None or limit == '':
                     ''' LIMIT value is empty'''
-                    self.set_info_message("Please, enter a LIMIT value.", "yellow")
+                    msg = " Please, enter LIMIT value."
+                    self.set_info_message("", msg, "yellow")
                 else:
+                    self.ui.transaction_id = (uuid.uuid4().hex)[0:12]                    
                     if action == cfg.sell:
                         ''' Sell order'''
                         self.ui.process_buy_limit_order(shareName, size, limit)
@@ -74,11 +80,13 @@ class Simulator(QMainWindow):
                         self.ui.process_buy_market_order(shareName, size)
             elif orderType == cfg.market:
                 ''' MARKET order'''
+                self.ui.transaction_id = (uuid.uuid4().hex)[0:12]
                 if action == cfg.sell:
                     ''' Sell order'''
                     self.ui.process_sell_market_order(shareName, size)
                 elif action == cfg.buy:
                     self.ui.process_buy_market_order(shareName, size)
+            self.ui.transaction_id = ''
    
     def process_sell_limit_order(self, share: str, size) -> None:
         ''' Execute a sell limit order.
@@ -118,9 +126,11 @@ class Simulator(QMainWindow):
             is_operation_processed = True
         ''' Displays confirmation message'''
         if is_operation_processed:
-            self.set_info_message(" Order executed successfully.", "green")            
+            msg = " Order executed successfully."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")
         else:
-            self.set_info_message(" Order not executed.", "red")
+            msg = " Order not executed."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")
         self.ui.update_context()    
         return is_operation_processed
  
@@ -129,15 +139,15 @@ class Simulator(QMainWindow):
         '''
         is_operation_processed = False
         index = fct.get_min_bid_index('ShareX', self.ui.market)
-        price = float(self.ui.market[index]['price'])
-        sizeprice = size * price
+        price = float(self.ui.market[index]['price'])        
+        sizeprice = float(size) * price
         account_balance = float(self.ui.account['balance'])
         market_size = self.ui.market[index]['size']
         market_price = self.ui.market[index]['price']
         ''' Remove share amount rom the market'''
         if fct.is_buyable(sizeprice, account_balance, market_size, market_price):
             current_market_size = market_size
-            current_market_size -= size            
+            current_market_size -= float(size)
             if current_market_size > 0:
                 self.ui.market[index]['size'] = current_market_size
                 self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice, 2)
@@ -150,20 +160,27 @@ class Simulator(QMainWindow):
             found = False        
             while idx <= size_share - 1 and not found:            
                 if self.ui.account['shares'][idx]['name'] == share:            
-                    self.ui.account['shares'][idx]['amount'] += size
+                    self.ui.account['shares'][idx]['amount'] += float(size)
                     found = True
                     is_operation_processed = True
                 idx += 1
+        else:
+           is_operation_processed = False
+           msg = " Unsufficient balance."
+           self.set_info_message(self.ui.transaction_id, msg, "yellow")
         ''' Displays confirmation message'''
         if is_operation_processed:
-            self.set_info_message(" Order executed successfully.", "green")            
+            msg = " Order executed successfully."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")                    
         else:
-            self.set_info_message(" Order not executed.", "red")
+            msg = " Order not executed."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")   
         self.ui.update_context()
         return is_operation_processed
         
     def process_buy_limit_order(self, share: str, size: int, limit: float) -> None:
-        ''' Execute a buy limit order only if the share price is lower than <limit>.
+        ''' Execute a buy limit order only if the share price is 
+            lower than or equal to <limit>.
             If no shares is under the limit, add a new offer to the market.
         '''
         is_opreation_processed = False
@@ -196,9 +213,11 @@ class Simulator(QMainWindow):
                     idx += 1
             ''' Displays confirmation message'''
             if is_operation_processed:
-                self.set_info_message(" Order executed successfully.", "green")            
+                msg = " Order executed successfully."
+                self.set_info_message(self.ui.transaction_id, msg, "yellow")            
             else:
-                self.set_info_message(" Order not executed.", "red")
+                msg = " Order not executed."
+                self.set_info_message(self.ui.transaction_id, msg, "yellow")
         else:
             ''' If not offer at the limit was found then
                 add a new offer on the market
