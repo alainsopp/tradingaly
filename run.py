@@ -74,10 +74,10 @@ class Simulator(QMainWindow):
                     self.ui.transaction_id = (uuid.uuid4().hex)[0:12]                    
                     if action == cfg.sell:
                         ''' Sell order'''
-                        self.ui.process_buy_limit_order(shareName, size, limit)
+                        self.ui.process_sell_limit_order(shareName, size, limit)
                         ''' Buy order'''
                     elif action == cfg.buy:
-                        self.ui.process_buy_market_order(shareName, size)
+                        self.ui.process_buy_limit_order(shareName, size, limit)
             elif orderType == cfg.market:
                 ''' MARKET order'''
                 self.ui.transaction_id = (uuid.uuid4().hex)[0:12]
@@ -88,10 +88,42 @@ class Simulator(QMainWindow):
                     self.ui.process_buy_market_order(shareName, size)
             self.ui.transaction_id = ''
    
-    def process_sell_limit_order(self, share: str, size) -> None:
-        ''' Execute a sell limit order.
-        '''
+    def process_sell_limit_order(self, share: str, size, limit: float) -> None:
+        ''' Execute a sell limit order only if the share price is
+            higher than or equal to <limit>.
+            If no shares is over the limit, add a new offer to the market.
+        '''        
         is_operation_processed = False
+        index = fct.get_limit_max_ask_index('ShareX', limit, self.ui.market)
+        if index != -1:
+            ''' If an offer at the limit was found, then execute the order'''
+            price = float(self.ui.market[index]['price'])
+            sizeprice = float(size) * price
+            share_balance = 0
+            market_size = self.ui.market[index]['size']
+            share_count = len(self.ui.account['shares'])
+            found = False
+            idx = -1
+            ''' Get the account share balance'''
+            while found != True and idx < share_count:
+                if self.ui.account['shares'][idx]['name'] == share:
+                    share_balance = int(self.ui.account['shares'][idx]['amount'])
+                    found = True
+                idx += 1
+            if fct.is_sellable(share_balance, size):
+                ''' Execute order'''
+                '''TODO: Add code here'''
+            else:
+                msg = " Unsufficient share balance. Order not executed."
+                self.set_info_message(self.ui.transaction_id, msg, "yellow")
+        else:
+            ''' If no offer at the limit was found then
+                add a new offer on the market
+            '''
+            self.ui.market.append({'shareName': 'ShareX', 'offer': 'BID', 'price': limit, 'size': size})
+            msg = " No matching offer found. Your offer is added to market."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")
+        self.ui.update_context()
         return is_operation_processed
     
     def process_sell_market_order(self, share: str, size: int) -> int:
@@ -184,17 +216,17 @@ class Simulator(QMainWindow):
             If no shares is under the limit, add a new offer to the market.
         '''
         is_opreation_processed = False
-        index = fct.get_limit_min_bid_index('ShareX', limit, self.ui.market)
+        index = fct.get_limit_min_bid_index('ShareX', limit, self.ui.market)        
         if index != -1:
             ''' If an offer at the limit was found, then execute the order'''
             price = float(self.ui.market[index]['price'])
-            sizeprice = size * price
+            sizeprice = float(size) * price
             account_balance = float(self.ui.account['balance'])
             market_size = self.ui.market[index]['size']
             market_price = self.ui.market[index]['price']
             ''' Remove share amount from market'''
             if fct.is_buyable(sizeprice, account_balance, market_size, market_price):                
-                market_size -= size            
+                market_size -= float(size)
                 if market_size > 0:
                     self.ui.market[index]['size'] = market_size
                     self.ui.account['balance'] = round(self.ui.account['balance'] - sizeprice, 2)
@@ -207,22 +239,22 @@ class Simulator(QMainWindow):
                 found = False        
                 while idx <= size_share - 1 and not found:            
                     if self.ui.account['shares'][idx]['name'] == share:            
-                        self.ui.account['shares'][idx]['amount'] += size
+                        self.ui.account['shares'][idx]['amount'] += float(size)
                         found = True
-                        is_operation_processed = True
+                        is_opreation_processed = True
+                        msg = " Order executed successfully."
+                        self.set_info_message(self.ui.transaction_id, msg, "yellow")
                     idx += 1
-            ''' Displays confirmation message'''
-            if is_operation_processed:
-                msg = " Order executed successfully."
-                self.set_info_message(self.ui.transaction_id, msg, "yellow")            
             else:
-                msg = " Order not executed."
+                msg = " Unsufficient balance. Order not executed."
                 self.set_info_message(self.ui.transaction_id, msg, "yellow")
         else:
             ''' If not offer at the limit was found then
                 add a new offer on the market
             '''
             self.ui.market.append({'shareName': 'ShareX', 'offer': 'ASK', 'price': limit, 'size': size})
+            msg = " No matching offer found. Your offer is added to market."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")
         self.ui.update_context()
         return is_opreation_processed
 

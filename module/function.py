@@ -7,25 +7,36 @@ def get_max_ask_index(share: str, data) -> int:
     for row in data:
         index += 1
         val = row['price']        
-        if row['offer'] == "ASK" and val > max_ask and row['shareName'] == share:
-            print('inside')
-            print(max_ask_index)
+        if row['offer'] == "ASK" and val > max_ask and row['shareName'] == share:            
             max_ask = val
             max_ask_index = index
     return max_ask_index
 
+def get_limit_max_ask_index(share: str, limit: float, data) ->int:
+    ''' Return hte index of the most expansive share <share> of the market'''
+    limit_max_ask = float(limit)
+    limit_max_ask_index = -1
+    index = -1
+    for row in data:
+        index += 1
+        market_price = float(row['price'])
+        if row['offer'] == "ASK" and market_price >= limit_max_ask:
+            limit_max_ask = market_price
+            limit_max_ask_index = index
+    return limit_max_ask_index
+
 def get_limit_min_bid_index(share: str, limit: float, data) ->int:
     ''' Return the index of the less expansive share <share> of the market
-        with a value lower than or equal to <limit> 
+        with a value lower or equal to <limit> 
     '''
-    limit_min_bid = limit
+    limit_min_bid = float(limit)
     limit_min_bid_index = -1
     index = -1
     for row in data:
         index += 1
-        val = row['price']
-        if row['offer'] == "BID" and val <= limit_min_bid:
-            limit_min_bid = val
+        market_price = float(row['price'])
+        if row['offer'] == "BID" and market_price <= limit_min_bid:            
+            limit_min_bid = market_price
             limit_min_bid_index = index
     return limit_min_bid_index
 
