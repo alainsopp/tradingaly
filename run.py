@@ -12,6 +12,10 @@ class Simulator(QMainWindow):
         super(Simulator, self).__init__(parent)                
         self.ui = uic.loadUi('simulator.ui', self) 
         self.ui.setWindowTitle('Tradingaly')
+        self.ui.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        header = self.ui.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+
         self.ui.lineEdit_amount.setValidator(QtGui.QIntValidator(1,2147483647, self))
         self.ui.lineEdit_price.setValidator(QtGui.QIntValidator(1,2147483647, self))
         
@@ -36,9 +40,8 @@ class Simulator(QMainWindow):
         self.update_account_view()
     
     def set_info_message(self, transacId: str, message: str, color: str) -> None:        
-        msg = fct.message_date() + ' [' + transacId + ']' + message
-        new_msg = "".join((self.ui.label_info_content.text(), '\n', msg))
-        self.ui.label_info_content.setText(new_msg)
+        msg = fct.message_date() + ' [' + transacId + ']' + message        
+        self.ui.label_info_content.setText(msg)
         self.ui.label_info_content.setStyleSheet('color:%s;' % color)
 
     def update_market_view(self) -> None:
@@ -112,7 +115,22 @@ class Simulator(QMainWindow):
                 idx += 1
             if fct.is_sellable(share_balance, size):
                 ''' Execute order'''
-                '''TODO: Add code here'''
+                ''' 1. Remove the amount from the share balance account'''
+                new_account_share_balance = share_balance - int(size)
+                self.ui.account['shares'][idx]['amount'] = new_account_share_balance
+                ''' 2. Remove the associated ASK offer from the market'''
+                new_market_size = int(self.market[index]['size']) - int(size)
+                self.market[index]['size'] = new_market_size
+                ''' 3. Update the currency balance of the account'''
+                current_account_currency_balance = float(self.ui.account['balance'])
+                market_share_price = float(self.ui.market[index]['price'])
+                new_account_currency_balance = current_account_currency_balance + market_share_price * int(size)
+                self.ui.account['balance'] = round(new_account_currency_balance, 2)
+                ''' 4. Completely remove the offer from market amount 
+                if the remining amount equal to 0 after operation.'''            
+                if int(self.market[index]['size']) == 0:                
+                    self.ui.market.remove(self.ui.market[index])
+                is_operation_processed = True
             else:
                 msg = " Unsufficient share balance. Order not executed."
                 self.set_info_message(self.ui.transaction_id, msg, "yellow")
@@ -141,28 +159,26 @@ class Simulator(QMainWindow):
         if fct.is_sellable(share_balance, size):
             ''' Execute the order'''
             ''' 1. Remove the amount from the share balance account'''
-            new_account_share_balance = share_balance - size
+            new_account_share_balance = share_balance - int(size)
             self.ui.account['shares'][idx]['amount'] = new_account_share_balance            
             ''' 2. Remove the associated offer from the market'''
-            new_market_size = int(self.market[index]['size']) - size
+            new_market_size = int(self.market[index]['size']) - int(size)
             self.market[index]['size'] = new_market_size
             ''' 3. Update the currency balance of the account'''
             current_account_currency_balance = float(self.ui.account['balance'])
             market_share_price = self.ui.market[index]['price']
-            new_account_currency_balance = current_account_currency_balance + market_share_price * size
+            new_account_currency_balance = current_account_currency_balance + market_share_price * int(size)
             self.ui.account['balance'] = round(new_account_currency_balance, 2)
             ''' 4. Completely remove the offer from market amount 
                 if the remining amount equal to 0 after operation.'''            
             if int(self.market[index]['size']) == 0:                
                 self.ui.market.remove(self.ui.market[index])
-            is_operation_processed = True
-        ''' Displays confirmation message'''
-        if is_operation_processed:
             msg = " Order executed successfully."
             self.set_info_message(self.ui.transaction_id, msg, "yellow")
-        else:
-            msg = " Order not executed."
-            self.set_info_message(self.ui.transaction_id, msg, "yellow")
+            is_operation_processed = True            
+        else:   
+            msg = " Order not executed. Unsufficient balance."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")        
         self.ui.update_context()    
         return is_operation_processed
  

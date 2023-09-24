@@ -1,7 +1,7 @@
 import csv, datetime
 
 def get_max_ask_index(share: str, data) -> int:
-    max_ask = data[0]['price']
+    max_ask = float(data[0]['price'])
     max_ask_index = 0
     index = -1
     for row in data:
@@ -60,12 +60,12 @@ def is_buyable(cost: float, balance: float, availableSize: int, marketPrice: flo
     to buy the amount and if the market can provide this amount.
     Return false otherwise
     '''
-    return balance - cost > 0 and availableSize * marketPrice > cost
+    return balance - cost > 0 and float(availableSize) * float(marketPrice) > cost
 
 def is_sellable(balance: int, amount: int) -> bool:
     ''' Return true if the account share balance greater
      than the amount to sell '''
-    return amount <= balance
+    return int(amount) <= int(balance)
 
 def load_data(filename) -> None:
     ''' Loading data from csv file '''
