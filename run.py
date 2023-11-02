@@ -29,7 +29,7 @@ class Simulator(QMainWindow):
         self.ui.transaction_id = ''
         ''' Set events on buttons'''
         self.ui.pushButton_buy.clicked.connect(lambda: self.process_order( 'ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.buy, self.ui.lineEdit_price.text()))
-        self.ui.pushButton_sell.clicked.connect(lambda: self.process_order('ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.sell,self.ui.lineEdit_price.text()))
+        self.ui.pushButton_sell.clicked.connect(lambda: self.process_order('ShareX', self.ui.lineEdit_amount.text(), self.ui.comboBox_type.currentText(), cfg.sell, self.ui.lineEdit_price.text()))
         
         self.ui.update_account_view()
         self.show()
@@ -39,8 +39,11 @@ class Simulator(QMainWindow):
         self.update_market_view()
         self.update_account_view()
     
-    def set_info_message(self, transacId: str, message: str, color: str) -> None:        
-        msg = fct.message_date() + ' [' + transacId + ']' + message        
+    def set_info_message(self, transacId: str, message: str, color: str) -> None:
+        if len(transacId) > 0:
+            msg = fct.message_date() + ' [' + transacId + ']' + message
+        else:
+            msg = fct.message_date() + message
         self.ui.label_info_content.setText(msg)
         self.ui.label_info_content.setStyleSheet('color:%s;' % color)
 
@@ -135,10 +138,13 @@ class Simulator(QMainWindow):
                 msg = " Unsufficient share balance. Order not executed."
                 self.set_info_message(self.ui.transaction_id, msg, "yellow")
         else:
-            ''' If no offer at the limit was found then
-                add a new offer on the market
-            '''
-            self.ui.market.append({'shareName': 'ShareX', 'offer': 'BID', 'price': limit, 'size': size})
+            ''' If no buy offer over or equal to the limit was found then add a new sell offer on the market'''
+            if False:
+                ''' If the market doen't already has the same sell offer then add a new sell offer'''
+                self.ui.market.append({'shareName': 'ShareX', 'offer': 'BID', 'price': limit, 'size': size})
+            else:
+                ''' If the market already has the same sell offer then update the amount.'''
+                pass
             msg = " No matching offer found. Your offer is added to market."
             self.set_info_message(self.ui.transaction_id, msg, "yellow")
         self.ui.update_context()
