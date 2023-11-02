@@ -13,7 +13,8 @@ def get_max_ask_index(share: str, data) -> int:
     return max_ask_index
 
 def get_limit_max_ask_index(share: str, limit: float, data) ->int:
-    ''' Return hte index of the most expansive share <share> of the market'''
+    ''' Return the index of the most expansive share <share> of the market
+    '''
     limit_max_ask = float(limit)
     limit_max_ask_index = -1
     index = -1
@@ -41,8 +42,7 @@ def get_limit_min_bid_index(share: str, limit: float, data) ->int:
     return limit_min_bid_index
 
 def get_min_bid_index(share: str, data) -> int:
-    ''' Return the index of the less expansive share inside the
-        table representing the market.
+    ''' Return the index of the less expansive share of the market.
     '''
     min_bid = data[0]['price']
     min_bid_index = -1
@@ -55,6 +55,17 @@ def get_min_bid_index(share: str, data) -> int:
             min_bid_index = index
     return min_bid_index
 
+def get_offer_index(share: str, data, size, offerType, price) -> int:
+    ''' return the index of a specific offer in the market'''
+    itr = -1
+    index = -1
+    for row in data:
+        itr += 1
+        val = row['price']
+        if row['offer'] == offerType and val == price and row['shareName'] == share:
+            index = itr
+    return index
+    
 def is_buyable(cost: float, balance: float, availableSize: int, marketPrice: float) -> bool:
     ''' Return true if the account balance is sufficient
     to buy the amount and if the market can provide this amount.
