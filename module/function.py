@@ -1,16 +1,19 @@
 import csv, datetime
 
 def get_max_ask_index(share: str, data) -> int:
-    max_ask = float(data[0]['price'])
-    max_ask_index = 0
-    index = -1
-    for row in data:
+    if len(data) > 0:
+      max_ask = float(data[0]['price'])
+      max_ask_index = 0
+      index = -1
+      for row in data:
         index += 1
         val = row['price']        
         if row['offer'] == "ASK" and val > max_ask and row['shareName'] == share:            
             max_ask = val
             max_ask_index = index
-    return max_ask_index
+    else:
+      max_ask_index = -1
+    return max_ask_index 
 
 def get_limit_max_ask_index(share: str, limit: float, data) ->int:
     ''' Return hte index of the most expansive share <share> of the market'''
@@ -49,7 +52,7 @@ def get_min_bid_index(share: str, data) -> int:
     index = -1
     for row in data:
         index +=1        
-        val = row['price']        
+        val = float(row['price'])        
         if row['offer'] == "BID" and val < min_bid and row['shareName'] == share:
             min_bid = val
             min_bid_index = index
@@ -60,11 +63,12 @@ def is_buyable(cost: float, balance: float, availableSize: int, marketPrice: flo
     to buy the amount and if the market can provide this amount.
     Return false otherwise
     '''
-    return balance - cost > 0 and float(availableSize) * float(marketPrice) > cost
+    return balance - cost > 0 and float(availableSize) * float(marketPrice) >= cost
 
 def is_sellable(balance: int, amount: int) -> bool:
     ''' Return true if the account share balance greater
      than the amount to sell '''
+    print(int(amount) <= int(balance))
     return int(amount) <= int(balance)
 
 def load_data(filename) -> None:

@@ -90,33 +90,41 @@ class Simulator(QMainWindow):
                 elif action == cfg.buy:
                     self.ui.process_buy_market_order(shareName, size)
             self.ui.transaction_id = ''
-   
+		
+
+    def get_share_infos(self, shareName: str) -> int:
+      ''' Return info about the share, Quantity, name, and location
+					in the list of shares.
+      '''
+      share_count = len(self.ui.account['shares'])
+      found = False
+      index = -1
+      share_infos = {'share':'', 'index':-1}
+      while found != True and index < share_count:
+        if self.ui.account['shares'][index]['name'] == shareName:
+            found = True
+            share_infos['share'] = self.ui.account['shares'][index]
+            share_infos['index'] = index+1
+        index += 1      
+      return share_infos
+    
     def process_sell_limit_order(self, share: str, size, limit: float) -> None:
         ''' Execute a sell limit order only if the share price is
             higher than or equal to <limit>.
             If no shares is over the limit, add a new offer to the market.
-        '''        
+        '''              
         is_operation_processed = False
-        index = fct.get_limit_max_ask_index('ShareX', limit, self.ui.market)
-        if index != -1:
-            ''' If an offer at the limit was found, then execute the order'''
-            price = float(self.ui.market[index]['price'])
-            sizeprice = float(size) * price
-            share_balance = 0
-            market_size = self.ui.market[index]['size']
-            share_count = len(self.ui.account['shares'])
-            found = False
-            idx = -1
+        index = fct.get_limit_max_ask_index(share, limit, self.ui.market)
+        share_balance = 0
+        idx = -1
+        if index != -1:          
             ''' Get the account share balance'''
-            while found != True and idx < share_count:
-                if self.ui.account['shares'][idx]['name'] == share:
-                    share_balance = int(self.ui.account['shares'][idx]['amount'])
-                    found = True
-                idx += 1
+            share_balance = self.get_share_infos(share)['share']['amount']
             if fct.is_sellable(share_balance, size):
                 ''' Execute order'''
                 ''' 1. Remove the amount from the share balance account'''
                 new_account_share_balance = share_balance - int(size)
+                print(new_account_share_balance)
                 self.ui.account['shares'][idx]['amount'] = new_account_share_balance
                 ''' 2. Remove the associated ASK offer from the market'''
                 new_market_size = int(self.market[index]['size']) - int(size)
@@ -127,7 +135,8 @@ class Simulator(QMainWindow):
                 new_account_currency_balance = current_account_currency_balance + market_share_price * int(size)
                 self.ui.account['balance'] = round(new_account_currency_balance, 2)
                 ''' 4. Completely remove the offer from market amount 
-                if the remining amount equal to 0 after operation.'''            
+                		if the remining amount equal to 0 after operation.
+                '''            
                 if int(self.market[index]['size']) == 0:                
                     self.ui.market.remove(self.ui.market[index])
                 is_operation_processed = True
@@ -141,16 +150,22 @@ class Simulator(QMainWindow):
             self.ui.market.append({'shareName': 'ShareX', 'offer': 'BID', 'price': limit, 'size': size})
             msg = " No matching offer found. Your offer is added to market."
             self.set_info_message(self.ui.transaction_id, msg, "yellow")
+            ''' Remove the amount from the share balance account'''
+            share_balance = self.get_share_infos(share)['share']['amount']
+            new_account_share_balance = share_balance - int(size)
+            print(new_account_share_balance)
+            self.ui.account['shares'][idx]['amount'] = new_account_share_balance
         self.ui.update_context()
         return is_operation_processed
     
     def process_sell_market_order(self, share: str, size: int) -> int:
         is_operation_processed = False
-        index = fct.get_max_ask_index('ShareX', self.ui.market)
+        index = fct.get_max_ask_index(share, self.ui.market)
         share_balance = 0
         found = False
         share_count = len(self.ui.account['shares'])
         idx = -1
+        print("is salable")
         while found != True and idx < share_count:
             if self.ui.account['shares'][idx]['name'] == share:
                 share_balance = int(self.ui.account['shares'][idx]['amount'])
@@ -159,8 +174,10 @@ class Simulator(QMainWindow):
         if fct.is_sellable(share_balance, size):
             ''' Execute the order'''
             ''' 1. Remove the amount from the share balance account'''
+            
             new_account_share_balance = share_balance - int(size)
-            self.ui.account['shares'][idx]['amount'] = new_account_share_balance            
+            self.ui.account['shares'][idx]['amount'] = new_account_share_balance
+            print(new_account_share_balance)        
             ''' 2. Remove the associated offer from the market'''
             new_market_size = int(self.market[index]['size']) - int(size)
             self.market[index]['size'] = new_market_size
@@ -186,13 +203,14 @@ class Simulator(QMainWindow):
         ''' buy shares on the market by executing a market buy order.
         '''
         is_operation_processed = False
-        index = fct.get_min_bid_index('ShareX', self.ui.market)
+        index = fct.get_min_bid_index(share, self.ui.market)
         price = float(self.ui.market[index]['price'])        
         sizeprice = float(size) * price
         account_balance = float(self.ui.account['balance'])
         market_size = self.ui.market[index]['size']
         market_price = self.ui.market[index]['price']
-        ''' Remove share amount rom the market'''
+        
+        ''' Remove share amount from the market'''
         if fct.is_buyable(sizeprice, account_balance, market_size, market_price):
             current_market_size = market_size
             current_market_size -= float(size)
