@@ -124,7 +124,7 @@ class Simulator(QMainWindow):
                 ''' Execute order'''
                 ''' 1. Remove the amount from the share balance account'''
                 new_account_share_balance = share_balance - int(size)
-                print(new_account_share_balance)
+                
                 self.ui.account['shares'][idx]['amount'] = new_account_share_balance
                 ''' 2. Remove the associated ASK offer from the market'''
                 new_market_size = int(self.market[index]['size']) - int(size)
@@ -145,19 +145,34 @@ class Simulator(QMainWindow):
                 self.set_info_message(self.ui.transaction_id, msg, "yellow")
         else:
             ''' If no offer at the limit was found then
-                add a new offer on the market
+                adds a new offer on the market
             '''
-            self.ui.market.append({'shareName': 'ShareX', 'offer': 'BID', 'price': limit, 'size': size})
-            msg = " No matching offer found. Your offer is added to market."
-            self.set_info_message(self.ui.transaction_id, msg, "yellow")
+            self.add_limit_order({'shareName': share, 'offer': 'BID', 'price': limit, 'size': size})            
             ''' Remove the amount from the share balance account'''
             share_balance = self.get_share_infos(share)['share']['amount']
-            new_account_share_balance = share_balance - int(size)
-            print(new_account_share_balance)
+            new_account_share_balance = share_balance - int(size)            
             self.ui.account['shares'][idx]['amount'] = new_account_share_balance
+            msg = " Your offer is added to market."
+            self.set_info_message(self.ui.transaction_id, msg, "yellow")
         self.ui.update_context()
         return is_operation_processed
     
+    def add_limit_order(self, order: dict) -> None:
+        ''' Adds a new limit order on the market.
+            :order: keys -> name,type,price,size
+        '''
+        found = False
+        for ordr in self.ui.market:
+            name = ordr['shareName'] == order['shareName']
+            type = ordr['offer'] == order['offer']
+            price= ordr['price'] == order['price']            
+            size = int(ordr['size'])
+            if name and type and price:
+                ordr['size'] = str(size + int(order['size']))
+                found = True
+        if not found:
+            self.ui.market.append({'shareName': order['shareName'], 'offer': order['offer'], 'price': order['price'], 'size': order['size']})
+
     def process_sell_market_order(self, share: str, size: int) -> int:
         is_operation_processed = False
         index = fct.get_max_ask_index(share, self.ui.market)
@@ -165,7 +180,7 @@ class Simulator(QMainWindow):
         found = False
         share_count = len(self.ui.account['shares'])
         idx = -1
-        print("is salable")
+        
         while found != True and idx < share_count:
             if self.ui.account['shares'][idx]['name'] == share:
                 share_balance = int(self.ui.account['shares'][idx]['amount'])
@@ -177,7 +192,7 @@ class Simulator(QMainWindow):
             
             new_account_share_balance = share_balance - int(size)
             self.ui.account['shares'][idx]['amount'] = new_account_share_balance
-            print(new_account_share_balance)        
+            
             ''' 2. Remove the associated offer from the market'''
             new_market_size = int(self.market[index]['size']) - int(size)
             self.market[index]['size'] = new_market_size
@@ -287,7 +302,7 @@ class Simulator(QMainWindow):
                 add a new offer on the market
             '''
             self.ui.market.append({'shareName': 'ShareX', 'offer': 'ASK', 'price': limit, 'size': size})
-            msg = " No matching offer found. Your offer is added to market."
+            msg = " Your offer is added to market."
             self.set_info_message(self.ui.transaction_id, msg, "yellow")
         self.ui.update_context()
         return is_opreation_processed
